@@ -9,7 +9,7 @@ import rospy, tf2_ros, tf2_geometry_msgs
 import math
 import numpy as np
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist, Point, PointStamped, Transform
+from geometry_msgs.msg import Twist, Point, PointStamped, TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
 import std_msgs
 
@@ -22,14 +22,14 @@ CAR_LENGTH = 0.445 # 0.445 meters
 WHEELBASE = 0.3187; # documention based | measured: ~32 cm
 
 ## NODE INITIALIZATION
-pub = rospy.Publisher('cmd_vel_uj', Twist, queue_size=1)
+pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 pubst1 = rospy.Publisher('pid_data', std_msgs.msg.String, queue_size=10)
 marker_pub = rospy.Publisher("/debug_marker2",Marker,queue_size=1)
 ujmarker_pub = rospy.Publisher("/algo2_marker",MarkerArray,queue_size=1) # new algorithm wall and follow markers  
 bluepoints = rospy.Publisher("/blue",MarkerArray,queue_size=1) 
 marker_blue = Marker()
 marker_arrayblue = MarkerArray()
-trans = Transform()
+trans = TransformStamped()
 # helo
 prev_steering_err = 0.0
 prev_velocity = 0.0
@@ -265,13 +265,13 @@ if __name__ == '__main__':
                 first_run = False
                 #rospy.loginfo(trans)
             except:
-                trans.translation.x = 0.26
-                trans.translation.y = 0.0
-                trans.translation.z = 0.228
-                trans.rotation.x = 0.0
-                trans.rotation.y = 0.0
-                trans.rotation.z = 0.999999682932
-                trans.rotation.w = 0.000796326710733
+                trans.transform.translation.x = 0.26
+                trans.transform.translation.y = 0.0
+                trans.transform.translation.z = 0.228
+                trans.transform.rotation.x = 0.0
+                trans.transform.rotation.y = 0.0
+                trans.transform.rotation.z = 0.999999682932
+                trans.transform.rotation.w = 0.000796326710733
                 #rospy.loginfo(trans)
                 #rospy.logerr("No transform to laser assuming original!")
         try:
