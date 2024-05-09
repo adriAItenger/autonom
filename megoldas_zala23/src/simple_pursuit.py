@@ -15,7 +15,7 @@ import std_msgs
 
 
 ANGLE_RANGE = 360 # LSN10 LIDAR has 360 degrees scan
-DESIRED_DISTANCE_RIGHT = 1.0 #0.9 # meters
+DESIRED_DISTANCE_RIGHT = 0.2 #0.9 # meters
 DESIRED_DISTANCE_LEFT = 0.8 # 0.55
 VELOCITY = 1.00 # meters per second
 CAR_LENGTH = 0.445 # 0.445 meters
@@ -24,63 +24,34 @@ WHEELBASE = 0.3187; # documention based | measured: ~32 cm
 ## NODE INITIALIZATION
 pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 pubst1 = rospy.Publisher('pid_data', std_msgs.msg.String, queue_size=10)
-marker_pub = rospy.Publisher("/debug_marker2",Marker,queue_size=1)
-ujmarker_pub = rospy.Publisher("/algo2_marker",MarkerArray,queue_size=1) # new algorithm wall and follow markers  
-bluepoints = rospy.Publisher("/blue",MarkerArray,queue_size=1) 
-marker_blue = Marker()
+marker_pub = rospy.Publisher("/debug_marker2", Marker, queue_size=1)
+goalmarker_pub = rospy.Publisher("/algo2_marker", MarkerArray, queue_size=1) # new algorithm wall and follow markers  
+bluepoints = rospy.Publisher("/blue",MarkerArray, queue_size=1) 
+falmarker = Marker()
 marker_arrayblue = MarkerArray()
 trans = TransformStamped()
-# helo
 prev_steering_err = 0.0
 prev_velocity = 0.0
 
 # MARKER PROPERTIES
-ujmarker = Marker()
-ujmarker.header.frame_id = "laser" # "laser"
-ujmarker.type = Marker.POINTS
-ujmarker.action = ujmarker.MODIFY
-ujmarker.color.r = 1.0
-ujmarker.color.g = 0.0
-ujmarker.color.a = 1.0
-ujmarker.color.b = 0.0
-ujmarker.scale.x = 0.1
-ujmarker.scale.y = 0.1
-ujmarker.scale.z = 0.1
-ujmarker.pose.orientation.x = 0.0
-ujmarker.pose.orientation.y = 0.0
-ujmarker.pose.orientation.z = 0.0
-ujmarker.pose.orientation.w = 1.0
+for nev in ["falmarker", "goalmarker", "marker_points"]:
+    exec(nev + " = Marker()")
+    exec(nev + ".header.frame_id = 'laser'") # "laser"
+    exec(nev + ".type = Marker.SPHERE_LIST")
+    exec(nev + ".action = " + nev + ".MODIFY")
+    exec(nev + ".color.r = 0.0")
+    exec(nev + ".color.g = 0.0")
+    exec(nev + ".color.a = 1.0")
+    exec(nev + ".color.b = 1.0")
+    exec(nev + ".scale.x = 0.1")
+    exec(nev + ".scale.y = 0.1")
+    exec(nev + ".scale.z = 0.1")
+    exec(nev + ".pose.orientation.x = 0.0")
+    exec(nev + ".pose.orientation.y = 0.0")
+    exec(nev + ".pose.orientation.z = 0.0")
+    exec(nev + ".pose.orientation.w = 1.0")
+    exec(nev + ".points = []")
 
-marker_blue.header.frame_id = "laser"
-marker_blue.type = Marker.SPHERE_LIST
-marker_blue.action = marker_blue.MODIFY
-marker_blue.color.r = 0.0
-marker_blue.color.g = 0.0
-marker_blue.color.a = 1.0
-marker_blue.color.b = 1.0
-marker_blue.scale.x = 0.1
-marker_blue.scale.y = 0.1
-marker_blue.scale.z = 0.1
-marker_blue.pose.orientation.x = 0.0
-marker_blue.pose.orientation.y = 0.0
-marker_blue.pose.orientation.z = 0.0
-marker_blue.pose.orientation.w = 1.0
-
-marker_points = Marker()
-marker_points.header.frame_id = "laser" # "laser"
-marker_points.type = Marker.SPHERE_LIST
-marker_points.action = marker_points.MODIFY
-marker_points.color.r = 0.0
-marker_points.color.g = 1.0
-marker_points.color.a = 1.0
-marker_points.color.b = 0.0
-marker_points.scale.x = 0.1
-marker_points.scale.y = 0.1
-marker_points.scale.z = 0.1
-marker_points.pose.orientation.x = 0.0
-marker_points.pose.orientation.y = 0.0
-marker_points.pose.orientation.z = 0.0
-marker_points.pose.orientation.w = 1.0
 
 # Methods in call order
 def callbackLaser(data):
@@ -94,9 +65,16 @@ def callbackLaser(data):
     msg_cmd.angular.z = error_steering # angle
     pub.publish(msg_cmd)    
 
-def followSimple(data):
-    # data: single message from topic /scan
-    # desired_trajetory: desired distance to the right wall [meters]
+def followSimple(data: LaserScan):
+    """
+    data: single message from topic /scan
+    desired_trajetory: desired distance to the right wall [meters]
+    velocity: desired velocity [m/s]
+    car_length: length of the car [meters]
+    wheelbase: distance between the front and rear wheels [meters]
+    returns: steering angle [radians]
+    """
+    desired_trajetory = DESIRED_DISTANCE_RIGHT
     global pubst1, marker_points, prev_steering_err, prev_velocity
     messageS1 = std_msgs.msg.String()
     messageS1.data = "Egyszeru_pursuit"
@@ -123,15 +101,15 @@ def followSimple(data):
         None
 
     marker_pub.publish(marker_points)
-    marker_arrayblue.markers.append(marker_blue)
+    marker_arrayblue.markers.append(falmarker)
     bluepoints.publish(marker_arrayblue)
-    ujmarkerarray = MarkerArray()
-    ujmarkerarray.markers.append(ujmarker)
-    ujmarker_pub.publish(ujmarkerarray)
-    ujmarker.points = []
-    ujmarkerarray.markers = []
+    goalmarkerarray = MarkerArray()
+    goalmarkerarray.markers.append(goalmarker)
+    goalmarker_pub.publish(goalmarkerarray)
+    goalmarker.points = []
+    goalmarkerarray.markers = []
     marker_arrayblue.markers = []
-    marker_blue.points = []
+    falmarker.points = []
     marker_points.points = []  
 
     messageS1.data += "\ntarget_angle: %.1f" % (target_angle)
@@ -176,19 +154,19 @@ def getDistance(ranges, angles):
             point.x, point.y = calcPointPos(ranges[t], angles[t])
             if not math.isinf(point.x):
                 point.z = 1
-                marker_blue.points.append(point)
+                falmarker.points.append(point)
                 # find max (flipped upside min)
                 if point.x > max_x:
                     max_x = point.x
         # Get points for new algorithm
-        p1, p2 = getFarthestNeighbours(marker_blue.points)
-        ujmarker.points.append(p1)
-        ujmarker.points.append(p2)
+        p1, p2 = getFarthestNeighbours(falmarker.points)
+        goalmarker.points.append(p1)
+        goalmarker.points.append(p2)
         p3 = Point()
         p3.x = (p1.x+p2.x)/2
         p3.y = (p1.y+p2.y)/2
         p3.z = 1
-        ujmarker.points.append(p3)
+        goalmarker.points.append(p3)
         left_d = p1.y
         right_d = p2.y
         angle = p3.y
