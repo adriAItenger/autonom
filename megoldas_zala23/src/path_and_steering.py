@@ -6,7 +6,8 @@ from std_msgs.msg import String
 from nav_msgs.msg import Path
 from visualization_msgs.msg import Marker
 from math import cos, sin, tan
-from geometry_msgs.msg import Point, PoseStamped, Pose
+from geometry_msgs.msg import Point, PoseStamped, Pose, Twist, Quaternion
+from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
 # Define global variables
@@ -37,7 +38,8 @@ def vehiclePoseCallback(pos_msg):
 # Main loop function
 def loop():
     global path
-
+    # print("speed_cmd: ", speed_cmd)
+    # print("steering_angle: ", steering_angle)
     # Create and publish steering marker
     if publish_steer_marker:
         steer_marker = Marker()
@@ -186,8 +188,8 @@ path_size = rospy.get_param('~path_size', 100)
 rospy.init_node('path_and_steering')
 
 # Subscribe to necessary topics
-sub_cmd = rospy.Subscriber('/cmd_vel', String, vehicleSteeringCallback)
-sub_current_pose = rospy.Subscriber(pose_topic, String, vehiclePoseCallback)
+sub_cmd = rospy.Subscriber('/cmd_vel', Twist, vehicleSteeringCallback)
+sub_current_pose = rospy.Subscriber(pose_topic, Odometry, vehiclePoseCallback)
 
 # Create publishers
 marker_pub = rospy.Publisher(marker_topic, Marker, queue_size=1)
@@ -198,7 +200,7 @@ text_pub = rospy.Publisher('/marker_text', Marker, queue_size=1)
 rospy.loginfo("Node started: %s subscribed: %s publishing: %s %s", rospy.get_name(), pose_topic, marker_topic, path_topic)
 
 # Set the loop rate
-rate = rospy.Rate(20) # 20Hz
+rate = rospy.Rate(144) # 20Hz
 
 # Main loop
 while not rospy.is_shutdown():
