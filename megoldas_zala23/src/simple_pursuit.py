@@ -75,6 +75,7 @@ def followSimple(data: LaserScan):
     returns: steering angle [radians]
     """
     desired_trajetory = DESIRED_DISTANCE_RIGHT
+
     global pubst1, marker_points, prev_steering_err, prev_velocity
     messageS1 = std_msgs.msg.String()
     messageS1.data = "Egyszeru_pursuit"
@@ -139,6 +140,16 @@ def calcPursuitAngle(goal_x, goal_y):
     return steering_angle
 
 def getDistance(ranges, angles):
+    """
+    Calculate the distance, angle, left distance, and right distance based on the given ranges and angles.
+    
+    Args:
+        ranges (list): List of range values.
+        angles (list): List of angle values.
+    
+    Returns:
+        tuple: A tuple containing the distance, angle, left distance, and right distance.
+    """
     global marker_points
     if(len(ranges) > 50):
         center1_min_index = np.where(math.radians(60) < angles)[0][0]
