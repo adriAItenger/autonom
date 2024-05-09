@@ -39,10 +39,10 @@ for nev in ["falmarker", "goalmarker", "marker_points"]:
     exec(nev + ".header.frame_id = 'laser'") # "laser"
     exec(nev + ".type = Marker.SPHERE_LIST")
     exec(nev + ".action = " + nev + ".MODIFY")
-    exec(nev + ".color.r = 0.0")
+    exec(nev + ".color.r = 1.0")
     exec(nev + ".color.g = 0.0")
     exec(nev + ".color.a = 1.0")
-    exec(nev + ".color.b = 1.0")
+    exec(nev + ".color.b = 0.1")
     exec(nev + ".scale.x = 0.1")
     exec(nev + ".scale.y = 0.1")
     exec(nev + ".scale.z = 0.1")
@@ -90,8 +90,6 @@ def followSimple(data: LaserScan):
     point.y = target_angle
     point_st = PointStamped()
     point_st.point = point
-    print(point_st)
-    print(trans)
     try:
         point_base_link_frame = tf2_geometry_msgs.do_transform_point(point_st, trans)
         point_base_link_frame.point.x *= 0.9 # reduce
@@ -173,9 +171,19 @@ def getDistance(ranges, angles):
         p1, p2 = getFarthestNeighbours(falmarker.points)
         goalmarker.points.append(p1)
         goalmarker.points.append(p2)
+        diff = (p1.y-p2.y)/2
         p3 = Point()
-        p3.x = (p1.x+p2.x)/2
-        p3.y = (p1.y+p2.y)/2
+        gain = 0.5*0.5*diff
+        ## coerce gain between 0.1 and 0.9
+        if gain < 0.1:
+            gain = 0.1
+        if gain > 0.9:  
+            gain = 0.9
+        print(gain)
+        px_temp = p1.x-p2.x * gain
+        py_temp = p1.y-p2.y * gain
+        p3.x = p1.x + px_temp
+        p3.y = p1.y + py_temp
         p3.z = 1
         goalmarker.points.append(p3)
         left_d = p1.y

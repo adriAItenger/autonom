@@ -111,14 +111,14 @@ def loop():
             marker_pos_x = 0.0
             marker_pos_y = 0.0
             theta = 0.0
-            for i in range(10 + int(-20 * speed_cmd)):
+            for i in range(10 + int(-20 )):
                 marker_pos_x -= 0.01 * 10 * cos(theta)
                 marker_pos_y -= 0.01 * 10 * sin(theta)
                 theta -= 0.01 * 10 / wheelbase * tan(steering_angle)
                 p = Point(marker_pos_x, marker_pos_y, 0)
                 steer_marker.points.append(p)
         else:
-            for i in range(10 + int(20 * speed_cmd)):
+            for i in range(10 + int(20 )):
                 marker_pos_x += 0.01 * 10 * cos(theta)
                 marker_pos_y += 0.01 * 10 * sin(theta)
                 theta += 0.01 * 10 / wheelbase * tan(steering_angle)
